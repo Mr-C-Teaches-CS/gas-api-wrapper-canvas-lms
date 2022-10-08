@@ -1,163 +1,81 @@
-# API Wrapper for Google Apps Script
+# Google Apps Script API Wrapper for Canvas LMS
 
-Create a Google Apps Script SDK from any JSON RESTful API.
+This is an API wrapper for Canvas by Instructure that allows you to pull information from your instance of Canvas into a Google Sheet or other Google Workspace document.
 
 ## About
 
-There is never a Google Apps Script SDK made available for the best APIs out there. It's time to start changing that, hence this library that allows to build an SDK out of any JSON-based RESTful API.
+I work with Canvas LMS a lot, but at times ind it tendious to have to click through to accomplish a task, especially when I need to do a lot of the same thing. In my experience, spreadsheets are a great place to make bulk changes to data and I'm familiar with them as are a lot of people. So would it be possible to make changes to Canvas from a Sheets?
 
-A detailed article with examples can be found [in my story on Medium](https://dmitry-kostyuk.medium.com/904be20f0dd7?sk=9c45dcfeadec25c3984f604dac793200).
+Using [API Wrapper for Google Apps Script](https://github.com/WildH0g/gas-api-wrapper) along with [Canvas LMS API](https://canvas.instructure.com/doc/api/), I have built a ready to use bridge between Canvas and Google Workspace.
 
 ## Install
 
-Option 1: clone this repo into your project and [bundle it into your GAS project](https://medium.com/geekculture/the-ultimate-guide-to-npm-modules-in-google-apps-script-a84545c3f57c?sk=7860f498c3560932ac0a2a6a61af9b90)
+Option 1: [Add a library to your script project](https://developers.google.com/apps-script/guides/libraries#add_a_library_to_your_script_project) to your project using this Script ID: 1_zSwb2sjCi_COC19iCkCyIv2sFrEmYK_CvbXEHWemp4mZR-SZ-tOURjV
 
-Option 2: Copy the already-bundled `APIWrapper.js` file into your project.
+Option 2: Copy the files from this repository into your project manually or using a tool like [Google Apps Script GitHub Assistant](https://chrome.google.com/webstore/detail/google-apps-script-github/lfjcgcmkmjjlieihflfhjopckgpelofo?hl=en)
 
 ## Usage
 
 ```js
-function mySDK() {
-  return new APIWrapperBuilder(`<<base url>>`, <<authentication object>>)
-    .addMethod('methodNameOne', <<method options>>)
-    .addMethod('methodNameTwo', <<method options>>)
-    .build();
+function getCourses() {
+  const baseUrl = "https://myschool.instructure.com";
+  const token = <<user-generated Canvas token>>;
+  const canvasApi = CanvasAPI.getCanvasAPI(baseUrl, token);
+  const courses = canvasApi.getCourses();
+  return courses;
 }
 
-function execute() {
-  mySDK().methodNameOne(<<argsObj>);
-}
 ```
 
-1. Create an instance of `API Wrapper Builder` providing a base URL (must not contain a slash at the end) and authentication options
-1. Use method chaining to define your methods
-1. The library uses the Builder pattern, it requires the the `APIWrapperBuilder` instance to use the `build()` method in the end to convertg it the the `APIWrapper` class.
+1. Obtain the base URL for your Canvas instance and a [user-generated access token](https://community.canvaslms.com/t5/Admin-Guide/How-do-I-manage-API-access-tokens-as-an-admin/ta-p/89) from your account.
+1. Call the getCanvasAPI() function from the library by passing the baseUrl and token as parameters and assign the resulting Canvas API object to a variable.
+1. Use the Canvas API object to run any existing methods. See below for a list of the methods.
 
-## Authentication
+## Methods
 
-GAS API Wrapper supports three types of authentication:
+  getActiveStudents(courseId)
 
-1. Token with or without a secret as part of the query string or header.
-1. Basic authentication.
-1. Bearer authentication.
+  getAssignment(courseId, assignmentId)
 
-### Token Authentication
+  getAssignments(courseId)
+ 
+  createAssignment(courseId, assignment)
 
-```js
-const apiWrapperBuilder =
-  new APIWrapperBuilder(<<base url>>, {
-      type: 'KeyToken',
-      addTo: 'query',
-      token: { name: '<<token name>>', value: '<<token value>>' },
-      secret: { name: '<<secret name>>', value: '<<secret value>>' },
-    });
-```
+  createAssignmentOverride(assignment, courseSectionId, dueAt)
 
-The Token authentication, named `KeyToken` in the library, suppors the following options:
+  getCourse(courseId)
 
-- `addTo` (required): supports two values: `query` or `headers` depending on where the API requires you to add the token, the query string or headers respectively
-- `token` (required): an object that contains 2 values, the token name and its value; for example `{name: 'token', value='qwerty'}` in a query string will be evaluated to `token=qwerty`
-- `secret` (optional): some APIs also require a secret to be added together with the token; the syntax works in the same way as the token.
+  getCourses()
 
-### Basic Authentication
+  getGradingStandards(courseId)
 
-```js
-const apiWrapperBuilder =
-  new APIWrapperBuilder(<<base url>>, {
-      type: 'Basic',
-      username: '<<user name>>',
-      password: '<<password>>',
-    })
-```
+  getAssignmentGroups(courseId)
 
-To use Basic authorization, set type to `Basic` and supply a user name and a password in the auth options.
+  getAssignmentOverride(courseId, assignmentId, overrideId)
 
-### Bearer Authetication
+  getAssignmentOverrides(courseId, assignmentId)
 
-```js
-const apiWrapperBuilder =
-  new APIWrapperBuilder(<<base url>>,
-      {
-        type: 'Bearer',
-        token: '<<Bearer token>>',
-      }
-    )
-```
+  getSubmission(courseId, assignmentId, userId)
 
-To use Bearer authorization, set type to 'Bearer' and supply the `Bearer` token in the auth options.
+  getSubmissions(courseId, assignmentId)
 
-## Creating Methods
+  getModuleItems(courseId, moduleId)
 
-The custom methods are defined with the `addMethod()` method, that takes a method name and options arguments.
+  getModules(courseId)
 
-### Basic Syntax
+  getModulesWithItems(courseId)
 
-```js
-apiWrapperBuilder
-  .addMethod('addUser', {
-    method: 'POST',
-    path: '/users',
-    payload: {
-      name: 'John',
-      age: 33,
-    },
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    queryParams: {
-      key: 'value',
-    },
-  })
-  .build();
-```
+  getSections(courseId)
 
-Method name must be a string.
+  getSectionsJSON(courseId)
 
-The `options` object takes the following entries:
+  getUsersInCourseJSON(courseId)
 
-- `method`: required HTTP method, typically `GET`, `POST`, `PUT` or `DELETE`
-- `path`: the endpoint you are querying
-- `payload`: the payload object
-- `headers`: the headers object
-- `queryParams`: the key-value pair object that is transformed into a query string
+  setGrade(courseId, assignmentId, userId, grade)
 
-### Using Dynamic Values
+  setGradeAndComment(courseId, assignmentId, userId, grade, comment)
 
-Dynamic values can be used in the `path`, `payload` or `queryParam` entries with mustache notation:
+  updateAssignment(courseId, assignmentId, assignment)
 
-```js
-const methodOptions = {
-  method: 'PUT',
-  path: '/users/{{userId}}',
-  payload: {
-    name: '{{userName}}',
-  },
-  queryParams: {
-    metaData: '{{metaData}}',
-  },
-};
-```
+  updateAssignmentOverride(assignment, overrideId, formattedDate)
 
-A method defined with such optioins can be called like so:
-
-```js
-mySDK().myMethod({
-  userId: 'xxx',
-  name: 'Jane',
-  metdaData: 'yyy',
-});
-```
-
-All dynamic values are optional and the entries are removed from the requrest if not used.
-
-## Contributing
-
-If you would like to contribute, I am looking for help in the following areas.
-
-Find any edge-cases that dont't work and help me solve them.
-
-Create SDKs with this library and add them to this README.
-
-## Version
-
-0.1.1
