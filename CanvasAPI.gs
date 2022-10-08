@@ -43,21 +43,25 @@ class CanvasAPI{
       method: 'GET',
       path: '/courses'
     })
-    .addMethod('getEnrollmentTerms', {
+    .addMethod('getGradingStandards', {
       method: 'GET',
-      path: '/accounts/self/terms'
+      path: '/courses/{{courseId}}/grading_standards'
     })
     .addMethod('getModuleItems', {
       method: 'GET',
-      path: '/courses/{{courseId}}/modules/{{moduleId}}/items'
+      path: '/courses/{{courseId}}/modules/{{moduleId}}/items?per_page=100'
     })
     .addMethod('getModules', {
       method: 'GET',
       path: '/courses/{{courseId}}/modules?per_page=100{{include}}'
     })
+    .addMethod('getSection', {
+      method: 'GET',
+      path: '/courses/{{courseId}}/sections/{{sectionId}}?per_page=100&include[]=students'
+    })
     .addMethod('getSections', {
       method: 'GET',
-      path: '/courses/{{courseId}}/sections'
+      path: '/courses/{{courseId}}/sections?per_page=100&include[]=students'
     })
     .addMethod('getSubmission', {
       method: 'GET',
@@ -65,19 +69,73 @@ class CanvasAPI{
     })
     .addMethod('getSubmissions', {
       method: 'GET',
-      path: '/courses/{{courseId}}/assignments/{{assignmentId}}/submissions'
+      path: '/courses/{{courseId}}/assignments/{{assignmentId}}/submissions?include[]=submission_comments&per_page=100'
     })
-    .addMethod('getAllUsers', {
+    .addMethod('getUsersInCourse', {
       method: 'GET',
-      path: '/accounts?per_page=100'
+      path: 'courses/{{courseId}}/users?per_page=100'
     })
-    .addMethod('getUsersCourses', {
-      method: 'GET',
-      path: '/users/sis_user_id:STU-{{schoolId}}/courses?include[]=total_scores&per_page=100'
-    })
-    .addMethod('setGrade', {
+    .addMethod('setGradeAndComment', {
       method: 'PUT',
-      path: '/courses/{{courseId}}/assignments/{{assignmentId}}/submissions/{{userId}}?submission[posted_grade]={{grade}}'
+      path: '/courses/{{courseId}}/assignments/{{assignmentId}}/submissions/{{userId}}',
+      queryParams: {
+        'submission[posted_grade]': '{{grade}}',
+        'comment[text_comment]': '{{comment}}'
+      }
+    })
+    .addMethod('updateAssignment', {
+      method: 'PUT',
+      path: '/courses/{{courseId}}/assignments/{{assignmentId}}',
+      queryParams: {
+        'assignment[published]': '{{isPublished}}',
+        'assignment[name]': '{{title}}',
+        'assignment[description]': '{{desc}}',
+        'assignment[submission_types]': '{{submissionTypes}}',
+        'assignment[points_possible]': '{{pointsPossible}}',
+        // 'assignment[grading_type]': '{{gradingType}}',
+        'assignment[due_at]': '{{dueAt}}',
+        // 'assignment[grading_standard_id]]': '{{gradingStandardId}}', 
+        'assignment[omit_from_final_grade]': '{{omitFromFinalGrade}}' 
+        
+      }
+    })
+    .addMethod('updateAssignmentOverride', {
+      method: 'PUT',
+      path: '/courses/{{courseId}}/assignments/{{assignmentId}}/overrides/{{overrideId}}?assignment_override[due_at]={{formattedDate}}'
+    })
+    .addMethod('createAssignment', {
+      method: 'POST',
+      path: '/courses/{{courseId}}/assignments',
+      queryParams: {
+        'assignment[published]': '{{isPublished}}',
+        'assignment[name]': '{{title}}',
+        'assignment[description]': '{{desc}}',
+        'assignment[submission_types]': '{{submissionTypes}}',
+        'assignment[points_possible]': '{{pointsPossible}}',
+        'assignment[grading_type]': '{{gradingType}}',  
+        'assignment[due_at]': '{{dueAt}}',
+        'assignment[assignment_group_id]': '{{assignmentGroup}}',
+        // 'assignment[grading_standard_id]]': '{{gradingStandardId}}', 
+        'assignment[omit_from_final_grade]': '{{omitFromFinalGrade}}' 
+      }
+    })
+    .addMethod('createAssignmentOverride', {
+      method: 'POST',
+      path: '/courses/{{courseId}}/assignments/{{assignmentId}}/overrides',
+      queryParams: {
+        'assignment_override[course_section_id]': '{{courseSectionId}}',
+        'assignment_override[title]': '{{title}}', 
+        'assignment_override[due_at]': '{{dueAt}}'
+      }
+    })
+    .addMethod('createModuleItem', {
+      method: 'POST',
+      path: '/courses/{{courseId}}/modules/{{moduleId}}/items',
+      queryParams: {
+        'module_item[content_id]': '{{contentId}}',
+        'module_item[title]': '{{title}}',
+        'module_item[type]': '{{type}}'        
+      }
     })
     .build();
   }
@@ -97,6 +155,45 @@ class CanvasAPI{
   getAssignments(courseId){
     return this.api.getAssignments({courseId: courseId});
   }
+ 
+  createAssignment(courseId, assignment){
+    const moduleId = assignment.moduleId;
+    const newAssignment = this.api.createAssignment({
+      courseId: courseId,
+      assignmentGroup: assignment.assignmentGroupId,
+      title: assignment.title,
+      desc: encodeURIComponent(assignment.desc),
+      isPublished: assignment.isPublished,
+      sumissionTypes: assignment.submissionTypes,
+      pointsPossible: assignment.pointsPossible,
+      gradingType: assignment.gradingType,
+      // assignment[grading_standard_id]   
+      });
+    // create module item
+    this.api.createModuleItem({
+      courseId: courseId,
+      title: newAssignment.name,
+      type: "Assignment",
+      contentId: newAssignment.id,
+      moduleId: parseInt(moduleId)
+    })
+
+    assignment.assignmentId = newAssignment.id;
+    return assignment;
+
+
+  }
+
+  createAssignmentOverride(assignment, courseSectionId, dueAt){
+    const response = this.api.createAssignmentOverride({
+      courseSectionId: courseSectionId,
+      title: assignment.title,
+      dueAt: dueAt,
+      courseId: assignment.courseId,
+      assignmentId: assignment.assignmentId
+    });
+    return response.id;
+  }
 
   getCourse(courseId){
     return this.api.getCourses({courseId: courseId});
@@ -104,6 +201,10 @@ class CanvasAPI{
 
   getCourses(){ 
     return this.api.getCourses(); 
+  }
+
+  getGradingStandards(courseId){
+    return this.api.getGradingStandards({courseId: courseId}); 
   }
 
   getAssignmentGroups(courseId){
@@ -122,10 +223,6 @@ class CanvasAPI{
     return this.api.getAssignmentOverrides({courseId: courseId, assignmentId: assignmentId});
   }
 
-  getEnrollmentTerms(){
-    return this.api.getEnrollmentTerms();
-  }
-
   getSubmission(courseId, assignmentId, userId){
     return this.api.getSubmission({courseId: courseId, assignmentId: assignmentId, userId: userId});
   }
@@ -138,32 +235,83 @@ class CanvasAPI{
     return this.api.getModuleItems({courseId: courseId, moduleId: moduleId});
   }
 
-  getModules(courseId, withItems){
-    let include = "";
-    if(withItems){
-      include = "&include[]=items";
-    }
-    return this.api.getModules({courseId: courseId, include: include});
+  getModules(courseId){
+    return this.api.getModules({courseId: courseId, include: ""});
+  }
+
+  getModulesWithItems(courseId){
+    return this.api.getModules({courseId: courseId, include: "&include[]=items"});
   }
 
   getSections(courseId){
     return this.api.getSections({courseId: courseId});
   }
 
-  getAllUsers(){
-    return this.api.getAllUsers();
+  getSectionsJSON(courseId){
+    const response = this.api.getSections({courseId: courseId});
+    const object = {}
+    response.forEach(section => {
+      section.students.forEach(student => {
+        object[student.id] = `${section.name} ${section.id}`;
+      });
+    });
+    return object;
   }
 
-  getUsersCourses(schoolId){
-    return this.api.getUsersCourses({schoolId: schoolId});
+  getUsersInCourseJSON(courseId){
+    const response = this.api.getUsersInCourse({courseId: courseId});
+    const object = {};
+    response.forEach(student => {
+      object[parseInt(student.id)] = student.sortable_name + " " + student.id;
+    })
+
+    return object;
+
   }
+
 
   setGrade(courseId, assignmentId, userId, grade){
-    this.api.setGrade({courseId: courseId, assignmentId: assignmentId, userId: userId, grade: grade})
+    this.api.setGradeAndComment({courseId: courseId, assignmentId: assignmentId, userId: userId, grade: grade})
+  }
+
+  setGradeAndComment(courseId, assignmentId, userId, grade, comment){
+    this.api.setGradeAndComment({courseId: courseId, assignmentId: assignmentId, userId: userId, grade: grade, comment: comment})
+  }
+
+  updateAssignment(courseId, assignmentId, assignment){
+    // const path = `/courses/${courseId}/assignments/${assignmentId}?assignment[description]=${encodeURIComponent(assignment.desc)}`;
+    // this.updateAssignmentManual(path);
+    return this.api.updateAssignment({
+      courseId: courseId, 
+      assignmentId: assignmentId,
+      assignmentGroup: assignment.assignmentGroupId,
+      title: assignment.title,
+      desc: encodeURIComponent(assignment.desc),
+      isPublished: assignment.isPublished,
+      submissionTypes: assignment.submissionTypes,
+      pointsPossible:  assignment.pointsPossible,
+      gradingType: assignment.gradingType,
+      // gradingStandardId: assignment.grading_standard_id,
+      omitFromFinalGrade: assignment.omitFromFinalGrade
+      });
+  }
+
+  updateAssignmentOverride(assignment, overrideId, formattedDate){
+    return this.api.updateAssignmentOverride({
+      courseId: assignment.courseId, 
+      assignmentId: assignment.assignmentId, 
+      overrideId: overrideId, 
+      formattedDate: formattedDate});
   }
 
 }
 
+/**
+ * Returns an instance of the Canvas API wrapper object to use for development
+ * @param {string} url base url of your instance of Canvas, e.g. 'https://myschool.instructure.com'
+ * @param {string} token user-generated Canvas access token
+ * @return {CanvasAPI} an instance of the Canvas API wrapper object
+ */
 function getCanvasAPI(url, token){
   return new CanvasAPI(url, token);
 }
