@@ -1,6 +1,6 @@
 # Google Apps Script API Wrapper for Canvas LMS
 
-This is an API wrapper for Canvas by Instructure that allows you to pull information from your instance of Canvas into a Google Sheet or other Google Workspace document.
+This is an API wrapper for [Canvas by Instructure](https://www.instructure.com/) that allows you to pull information from your instance of Canvas into a Google Sheet or other Google Workspace document.
 
 ## About
 
