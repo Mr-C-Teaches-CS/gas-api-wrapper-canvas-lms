@@ -69,6 +69,8 @@ function getCourses() {
 
   getSectionsJSON(courseId)
 
+  getUsersCourses(courseId)
+
   getUsersInCourseJSON(courseId)
 
   setGrade(courseId, assignmentId, userId, grade)
