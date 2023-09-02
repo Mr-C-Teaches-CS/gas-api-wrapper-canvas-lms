@@ -1,5 +1,5 @@
 class CanvasAPI{
-
+  
   constructor(url, token){
     this.api = this.api(url, token);
   }
@@ -71,9 +71,16 @@ class CanvasAPI{
       method: 'GET',
       path: '/courses/{{courseId}}/assignments/{{assignmentId}}/submissions?include[]=submission_comments&per_page=100'
     })
+    .addMethod('getUsersCourses', {
+      method: 'GET',
+      path: '/users/sis_user_id:STU-{{schoolId}}/courses?per_page=100&include[]=current_grading_period_scores&include[]=total_scores'
+    })
     .addMethod('getUsersInCourse', {
       method: 'GET',
-      path: 'courses/{{courseId}}/users?per_page=100'
+      path: 'courses/{{courseId}}/users?per_page=100&include[]=enrollments&include[]=current_grading_period_scores',
+      queryParams: {
+        'enrollment_type[]': '{{enrollmentType}}'
+      }
     })
     .addMethod('setGradeAndComment', {
       method: 'PUT',
@@ -258,15 +265,28 @@ class CanvasAPI{
     return object;
   }
 
-  getUsersInCourseJSON(courseId){
-    const response = this.api.getUsersInCourse({courseId: courseId});
+  getUsersInCourseJSON(courseId, enrollmentType){
+    const response = this.api.getUsersInCourse({courseId: courseId, enrollmentType: enrollmentType});
+    console.log(response)
     const object = {};
-    response.forEach(student => {
-      object[parseInt(student.id)] = student.sortable_name + " " + student.id;
-    })
+    try{
+      response.forEach(student => {
+        object[parseInt(student.id)] = student.sortable_name + " " + student.id;
+      })
+    } catch(err){
+      console.log(err);
+    }
 
     return object;
 
+  }
+
+  getStudentsInCourse(courseId){
+    return this.api.getUsersInCourse({courseId: courseId, enrollmentType: "student"});
+  }
+
+  getUsersCourses(schoolId){
+    return this.api.getUsersCourses({schoolId: schoolId})
   }
 
 
