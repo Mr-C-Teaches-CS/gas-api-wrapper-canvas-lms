@@ -11,7 +11,7 @@ Using [API Wrapper for Google Apps Script](https://github.com/WildH0g/gas-api-wr
 ## Install
 
 Option 1: [Add a library to your script project](https://developers.google.com/apps-script/guides/libraries#add_a_library_to_your_script_project) to your project using this Script ID: 
-1iUYsznB1jws8zd1xtEuiFDoa_n4_8szvBl8WMPaueP80M6o78yAXoY4- 
+1eGqshK-5_013i9OrMS4-P8MeQyCXF8T_QButG4b7c1g9Xe36w0P1Gjkx
 
 Option 2: Copy the files from this repository into your project manually or using a tool like [Google Apps Script GitHub Assistant](https://chrome.google.com/webstore/detail/google-apps-script-github/lfjcgcmkmjjlieihflfhjopckgpelofo?hl=en)
 
